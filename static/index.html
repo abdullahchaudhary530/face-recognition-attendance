@@ -1,0 +1,1179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Face Attendance System</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --bg2: #161b22;
+    --bg3: #21262d;
+    --border: #30363d;
+    --accent: #238636;
+    --accent2: #1f6feb;
+    --danger: #da3633;
+    --warn: #d29922;
+    --text: #e6edf3;
+    --text2: #8b949e;
+    --green: #3fb950;
+    --blue: #58a6ff;
+    --purple: #a371f7;
+    --orange: #f78166;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+         background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* Layout */
+  .shell { display: flex; height: 100vh; overflow: hidden; }
+  .sidebar { width: 220px; background: var(--bg2); border-right: 1px solid var(--border);
+             display: flex; flex-direction: column; flex-shrink: 0; }
+  .main { flex: 1; overflow-y: auto; }
+
+  /* Sidebar */
+  .brand { padding: 20px 16px 16px; border-bottom: 1px solid var(--border); }
+  .brand h1 { font-size: 15px; font-weight: 700; color: var(--text); letter-spacing: -0.3px; }
+  .brand p { font-size: 11px; color: var(--text2); margin-top: 2px; }
+  .brand-icon { font-size: 22px; margin-bottom: 6px; }
+
+  nav { flex: 1; padding: 8px 0; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 16px;
+              cursor: pointer; font-size: 13px; color: var(--text2); border-radius: 6px;
+              margin: 1px 8px; transition: all .15s; }
+  .nav-item:hover { background: var(--bg3); color: var(--text); }
+  .nav-item.active { background: var(--accent2)22; color: var(--blue); }
+  .nav-item .icon { width: 18px; text-align: center; font-size: 15px; }
+  .nav-section { font-size: 10px; font-weight: 700; color: var(--text2); padding: 12px 24px 4px;
+                 text-transform: uppercase; letter-spacing: 0.8px; }
+
+  .sidebar-footer { padding: 12px 16px; border-top: 1px solid var(--border);
+                    font-size: 11px; color: var(--text2); }
+
+  /* Pages */
+  .page { display: none; padding: 24px; }
+  .page.active { display: block; }
+
+  /* Page header */
+  .page-header { margin-bottom: 24px; }
+  .page-header h2 { font-size: 20px; font-weight: 700; }
+  .page-header p { font-size: 13px; color: var(--text2); margin-top: 4px; }
+
+  /* Cards */
+  .card { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 20px; }
+  .card-title { font-size: 13px; font-weight: 600; color: var(--text2);
+                text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+
+  /* Stat cards */
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+  .stat-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px;
+               padding: 16px 20px; position: relative; overflow: hidden; }
+  .stat-card::before { content: ''; position: absolute; top: 0; left: 0;
+                       right: 0; height: 3px; }
+  .stat-card.green::before { background: var(--green); }
+  .stat-card.blue::before { background: var(--blue); }
+  .stat-card.orange::before { background: var(--orange); }
+  .stat-card.purple::before { background: var(--purple); }
+  .stat-label { font-size: 11px; color: var(--text2); text-transform: uppercase;
+                letter-spacing: 0.5px; margin-bottom: 8px; }
+  .stat-value { font-size: 28px; font-weight: 700; }
+  .stat-sub { font-size: 11px; color: var(--text2); margin-top: 4px; }
+  .stat-card.green .stat-value { color: var(--green); }
+  .stat-card.blue .stat-value { color: var(--blue); }
+  .stat-card.orange .stat-value { color: var(--orange); }
+  .stat-card.purple .stat-value { color: var(--purple); }
+
+  /* Grid layouts */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+  /* Buttons */
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px;
+         border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer;
+         border: none; transition: all .15s; }
+  .btn-primary { background: var(--accent2); color: #fff; }
+  .btn-primary:hover { background: #388bfd; }
+  .btn-success { background: var(--accent); color: #fff; }
+  .btn-success:hover { background: #2ea043; }
+  .btn-danger { background: var(--danger); color: #fff; }
+  .btn-danger:hover { background: #f85149; }
+  .btn-secondary { background: var(--bg3); color: var(--text); border: 1px solid var(--border); }
+  .btn-secondary:hover { background: var(--border); }
+  .btn-warn { background: var(--warn); color: #000; }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+
+  /* Forms */
+  .form-group { margin-bottom: 14px; }
+  label { display: block; font-size: 12px; color: var(--text2); margin-bottom: 5px; font-weight: 500; }
+  input, select, textarea {
+    width: 100%; background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 6px; padding: 8px 12px; color: var(--text); font-size: 13px; outline: none;
+  }
+  input:focus, select:focus { border-color: var(--blue); }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  /* Tables */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border);
+       color: var(--text2); font-size: 11px; text-transform: uppercase; font-weight: 600; }
+  td { padding: 10px 12px; border-bottom: 1px solid var(--border)55; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--bg3)55; }
+  .empty-row td { text-align: center; color: var(--text2); padding: 32px; }
+
+  /* Badges */
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+  .badge-green { background: #23863622; color: var(--green); border: 1px solid #23863655; }
+  .badge-blue { background: #1f6feb22; color: var(--blue); border: 1px solid #1f6feb55; }
+  .badge-orange { background: #d2992222; color: var(--warn); border: 1px solid #d2992255; }
+  .badge-red { background: #da363322; color: var(--orange); border: 1px solid #da363355; }
+  .badge-gray { background: var(--bg3); color: var(--text2); border: 1px solid var(--border); }
+  .badge-purple { background: #a371f722; color: var(--purple); border: 1px solid #a371f755; }
+
+  /* Camera feed */
+  #camera-feed { width: 100%; aspect-ratio: 4/3; background: #000; border-radius: 8px;
+                 object-fit: contain; display: block; }
+  .camera-container { position: relative; }
+  .camera-overlay { position: absolute; top: 8px; right: 8px;
+                    background: #00000088; padding: 4px 8px; border-radius: 4px;
+                    font-size: 11px; color: #fff; }
+
+  /* Progress bar */
+  .progress-bar { background: var(--bg3); border-radius: 4px; height: 8px; overflow: hidden; margin-top: 8px; }
+  .progress-fill { height: 100%; background: var(--blue); border-radius: 4px; transition: width .3s; }
+
+  /* Alert / Toast */
+  #toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex;
+                     flex-direction: column; gap: 8px; pointer-events: none; }
+  .toast { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px;
+           padding: 12px 16px; font-size: 13px; max-width: 320px; display: flex;
+           align-items: flex-start; gap: 10px; box-shadow: 0 4px 20px #00000055;
+           animation: slideIn .2s ease; pointer-events: all; }
+  .toast.success { border-left: 3px solid var(--green); }
+  .toast.error { border-left: 3px solid var(--danger); }
+  .toast.info { border-left: 3px solid var(--blue); }
+  .toast.warn { border-left: 3px solid var(--warn); }
+  @keyframes slideIn { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+  /* Detection notification */
+  #detection-box { background: var(--bg3); border-radius: 8px; padding: 14px;
+                   margin-top: 12px; display: none; }
+  #detection-box.success { border: 1px solid var(--green); }
+  #detection-box.error { border: 1px solid var(--danger); }
+  .detect-name { font-size: 16px; font-weight: 700; }
+  .detect-detail { font-size: 12px; color: var(--text2); margin-top: 4px; }
+  .detect-action { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 12px;
+                   font-weight: 700; margin-top: 6px; }
+  .action-in { background: #23863622; color: var(--green); }
+  .action-out { background: #1f6feb22; color: var(--blue); }
+
+  /* Employee list */
+  .emp-row { display: flex; align-items: center; gap: 12px; padding: 12px;
+             border-bottom: 1px solid var(--border)55; }
+  .emp-row:last-child { border-bottom: none; }
+  .emp-avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--accent2)33;
+                display: flex; align-items: center; justify-content: center; font-weight: 700;
+                color: var(--blue); font-size: 14px; flex-shrink: 0; }
+  .emp-info { flex: 1; }
+  .emp-name { font-size: 14px; font-weight: 600; }
+  .emp-meta { font-size: 11px; color: var(--text2); margin-top: 1px; }
+
+  /* Timeline */
+  .timeline { display: flex; flex-direction: column; gap: 8px; }
+  .tl-item { display: flex; gap: 12px; align-items: flex-start; }
+  .tl-dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 4px; flex-shrink: 0; }
+  .tl-dot.green { background: var(--green); }
+  .tl-dot.blue { background: var(--blue); }
+  .tl-dot.orange { background: var(--warn); }
+  .tl-time { font-size: 12px; color: var(--text2); min-width: 60px; }
+  .tl-text { font-size: 13px; }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+  .tab { padding: 10px 20px; font-size: 13px; cursor: pointer; color: var(--text2);
+         border-bottom: 2px solid transparent; transition: all .15s; }
+  .tab.active { color: var(--blue); border-bottom-color: var(--blue); }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* Status indicator */
+  .status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; }
+  .status-dot.on { background: var(--green); box-shadow: 0 0 6px var(--green); }
+  .status-dot.off { background: var(--text2); }
+
+  /* Chart bars */
+  .mini-chart { display: flex; align-items: flex-end; gap: 4px; height: 60px; margin-top: 8px; }
+  .mini-bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .mini-bar { width: 100%; border-radius: 3px 3px 0 0; transition: height .3s; min-height: 2px; }
+  .mini-bar-label { font-size: 9px; color: var(--text2); }
+
+  /* Modal */
+  .modal-bg { display: none; position: fixed; inset: 0; background: #00000088; z-index: 100;
+              align-items: center; justify-content: center; }
+  .modal-bg.open { display: flex; }
+  .modal { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px;
+           padding: 24px; width: 480px; max-width: 95vw; }
+  .modal h3 { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
+
+  .flex-between { display: flex; align-items: center; justify-content: space-between; }
+  .flex-gap { display: flex; align-items: center; gap: 8px; }
+  .mt-8 { margin-top: 8px; }
+  .mt-12 { margin-top: 12px; }
+  .mt-16 { margin-top: 16px; }
+  .mb-16 { margin-bottom: 16px; }
+  .text-sm { font-size: 12px; color: var(--text2); }
+  .text-center { text-align: center; }
+  .divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+</style>
+</head>
+<body>
+
+<div id="toast-container"></div>
+
+<!-- Add Employee Modal -->
+<div class="modal-bg" id="addEmpModal">
+  <div class="modal">
+    <h3>➕ Register New Employee</h3>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Employee ID *</label>
+        <input type="text" id="new-emp-id" placeholder="e.g. EMP001"/>
+      </div>
+      <div class="form-group">
+        <label>Full Name *</label>
+        <input type="text" id="new-emp-name" placeholder="e.g. Ali Hassan"/>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Department</label>
+      <input type="text" id="new-emp-dept" placeholder="e.g. Engineering"/>
+    </div>
+    <div class="flex-gap mt-12">
+      <button class="btn btn-success" onclick="submitAddEmployee()">Register</button>
+      <button class="btn btn-secondary" onclick="closeModal('addEmpModal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Train Employee Modal -->
+<div class="modal-bg" id="trainModal">
+  <div class="modal">
+    <h3>📷 Capture Face Samples</h3>
+    <p class="text-sm mb-16">Position your face in front of the camera. Keep different angles.</p>
+    <div class="camera-container">
+      <img id="train-feed" style="width:100%;border-radius:8px;background:#000;display:block;"/>
+      <div class="camera-overlay" id="train-overlay">Ready</div>
+    </div>
+    <div class="mt-12">
+      <div class="flex-between">
+        <span class="text-sm" id="train-progress-text">0 / 50 samples</span>
+        <span class="text-sm" id="train-emp-label">—</span>
+      </div>
+      <div class="progress-bar mt-8">
+        <div class="progress-fill" id="train-progress-bar" style="width:0%"></div>
+      </div>
+    </div>
+    <div class="flex-gap mt-16">
+      <button class="btn btn-danger btn-sm" id="stop-train-btn" onclick="stopTraining()">Stop</button>
+      <button class="btn btn-secondary btn-sm" onclick="closeModal('trainModal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="shell">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-icon">👁</div>
+      <h1>Face Attendance</h1>
+      <p>Biometric System</p>
+    </div>
+    <nav>
+      <div class="nav-section">Main</div>
+      <div class="nav-item active" onclick="showPage('dashboard')">
+        <span class="icon">📊</span> Dashboard
+      </div>
+      <div class="nav-item" onclick="showPage('recognition')">
+        <span class="icon">🎥</span> Live Recognition
+      </div>
+      <div class="nav-section">Management</div>
+      <div class="nav-item" onclick="showPage('employees')">
+        <span class="icon">👥</span> Employees
+      </div>
+      <div class="nav-item" onclick="showPage('training')">
+        <span class="icon">🧠</span> Train Model
+      </div>
+      <div class="nav-section">Records</div>
+      <div class="nav-item" onclick="showPage('records')">
+        <span class="icon">📋</span> Attendance Log
+      </div>
+      <div class="nav-item" onclick="showPage('analytics')">
+        <span class="icon">📈</span> Analytics
+      </div>
+      <div class="nav-section">System</div>
+      <div class="nav-item" onclick="showPage('settings')">
+        <span class="icon">⚙️</span> Settings
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div><span class="status-dot" id="model-dot"></span><span id="model-status-txt">Checking...</span></div>
+      <div class="mt-8" id="time-display" style="font-size:13px;color:var(--text)"></div>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main">
+
+    <!-- ─── DASHBOARD ───────────────────────────────────────── -->
+    <div class="page active" id="page-dashboard">
+      <div class="page-header">
+        <h2>📊 Dashboard</h2>
+        <p id="dash-date">Loading...</p>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card green">
+          <div class="stat-label">Present Today</div>
+          <div class="stat-value" id="stat-present">—</div>
+          <div class="stat-sub" id="stat-present-sub">checking...</div>
+        </div>
+        <div class="stat-card orange">
+          <div class="stat-label">Late Arrivals</div>
+          <div class="stat-value" id="stat-late">—</div>
+          <div class="stat-sub">arrivals after schedule</div>
+        </div>
+        <div class="stat-card blue">
+          <div class="stat-label">Checked Out</div>
+          <div class="stat-value" id="stat-checkout">—</div>
+          <div class="stat-sub">completed sessions</div>
+        </div>
+        <div class="stat-card purple">
+          <div class="stat-label">Active Now</div>
+          <div class="stat-value" id="stat-active">—</div>
+          <div class="stat-sub">currently in premises</div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">Today's Attendance</div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Name</th><th>Check In</th><th>Check Out</th><th>Status</th></tr></thead>
+              <tbody id="today-table-body">
+                <tr class="empty-row"><td colspan="4">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Currently In Premises</div>
+          <div id="active-sessions-list">
+            <p class="text-sm text-center" style="padding:24px">No active sessions</p>
+          </div>
+          <hr class="divider"/>
+          <div class="card-title">7-Day Attendance Trend</div>
+          <div class="mini-chart" id="trend-chart"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── LIVE RECOGNITION ─────────────────────────────────── -->
+    <div class="page" id="page-recognition">
+      <div class="page-header">
+        <h2>🎥 Live Face Recognition</h2>
+        <p>Automatic check-in / check-out via face detection</p>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title flex-between">
+            <span>Camera Feed</span>
+            <span id="cam-status-badge" class="badge badge-gray">● Offline</span>
+          </div>
+          <div class="camera-container">
+            <img id="camera-feed" src="" alt="Camera feed"/>
+          </div>
+          <div class="flex-gap mt-12">
+            <button class="btn btn-success" id="start-recog-btn" onclick="startRecognition()">▶ Start</button>
+            <button class="btn btn-danger" id="stop-recog-btn" onclick="stopRecognition()" disabled>■ Stop</button>
+          </div>
+        </div>
+
+        <div>
+          <div class="card mb-16">
+            <div class="card-title">Last Detection</div>
+            <div id="detection-box">
+              <div class="detect-name" id="detect-name">—</div>
+              <div class="detect-detail" id="detect-detail">—</div>
+              <div class="detect-action" id="detect-action-badge">—</div>
+            </div>
+            <p class="text-sm" id="no-detection-text">No face detected yet. Start camera to begin.</p>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Recent Activity</div>
+            <div class="timeline" id="recent-timeline">
+              <p class="text-sm">No activity yet</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── EMPLOYEES ─────────────────────────────────────────── -->
+    <div class="page" id="page-employees">
+      <div class="page-header flex-between">
+        <div>
+          <h2>👥 Employees</h2>
+          <p>Manage registered employees</p>
+        </div>
+        <button class="btn btn-success" onclick="openModal('addEmpModal')">+ Add Employee</button>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">Registered Employees</div>
+          <div id="emp-list">Loading...</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Quick Actions</div>
+          <p class="text-sm mb-16">Manually record attendance for an employee</p>
+          <div class="form-group">
+            <label>Select Employee</label>
+            <select id="manual-emp-select"><option value="">— Choose employee —</option></select>
+          </div>
+          <div class="flex-gap">
+            <button class="btn btn-success btn-sm" onclick="manualCheckIn()">✅ Check In</button>
+            <button class="btn btn-primary btn-sm" onclick="manualCheckOut()">🚪 Check Out</button>
+          </div>
+          <div class="mt-16" id="manual-result"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── TRAINING ──────────────────────────────────────────── -->
+    <div class="page" id="page-training">
+      <div class="page-header">
+        <h2>🧠 Train Face Recognition Model</h2>
+        <p>Capture face samples for each employee, then train the model</p>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">Step 1 — Capture Face Samples</div>
+          <div class="form-group mt-8">
+            <label>Select Employee</label>
+            <select id="train-emp-select"><option value="">— Choose employee —</option></select>
+          </div>
+          <div class="form-group">
+            <label>Number of Samples (30–100)</label>
+            <input type="number" id="train-samples" value="50" min="30" max="100"/>
+          </div>
+          <button class="btn btn-primary" onclick="startCapture()">📷 Start Capture</button>
+
+          <hr class="divider"/>
+          <div class="card-title">Step 2 — Train Model</div>
+          <p class="text-sm mb-16">After capturing samples for all employees, train the recognition model.</p>
+          <button class="btn btn-success" onclick="trainModel()" id="train-model-btn">🧠 Train Model</button>
+          <div class="mt-12 text-sm" id="train-model-result"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Training Status</div>
+          <div id="training-status-list">Loading...</div>
+          <hr class="divider"/>
+          <div class="card-title">Model Info</div>
+          <div id="model-info">Loading...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── RECORDS ───────────────────────────────────────────── -->
+    <div class="page" id="page-records">
+      <div class="page-header">
+        <h2>📋 Attendance Records</h2>
+        <p>View and browse all attendance logs</p>
+      </div>
+
+      <div class="card mb-16">
+        <div class="flex-gap">
+          <div class="form-group" style="margin:0;flex:0 0 180px">
+            <label>Select Date</label>
+            <select id="records-date-select" onchange="loadRecordsForDate()">
+              <option value="">Today</option>
+            </select>
+          </div>
+          <div style="margin-top:18px">
+            <button class="btn btn-secondary btn-sm" onclick="exportCSV()">⬇ Export CSV</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title" id="records-title">Today's Records</div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Employee</th><th>Department</th><th>Check In</th>
+                <th>Check Out</th><th>Hours</th><th>CI Status</th><th>CO Status</th><th>Overall</th>
+              </tr>
+            </thead>
+            <tbody id="records-table-body">
+              <tr class="empty-row"><td colspan="8">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── ANALYTICS ─────────────────────────────────────────── -->
+    <div class="page" id="page-analytics">
+      <div class="page-header">
+        <h2>📈 Analytics</h2>
+        <p>Attendance patterns and insights</p>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card green">
+          <div class="stat-label">Total Present (30d)</div>
+          <div class="stat-value" id="a-present">—</div>
+        </div>
+        <div class="stat-card orange">
+          <div class="stat-label">Late (30d)</div>
+          <div class="stat-value" id="a-late">—</div>
+        </div>
+        <div class="stat-card blue">
+          <div class="stat-label">Early Leave (30d)</div>
+          <div class="stat-value" id="a-early">—</div>
+        </div>
+        <div class="stat-card purple">
+          <div class="stat-label">Absent (30d)</div>
+          <div class="stat-value" id="a-absent">—</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Employee Performance Summary</div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Employee</th><th>Days Present</th><th>Late</th><th>Early Leave</th><th>Total Hours</th><th>Avg Hours/Day</th></tr>
+            </thead>
+            <tbody id="analytics-table-body">
+              <tr class="empty-row"><td colspan="6">Loading...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── SETTINGS ──────────────────────────────────────────── -->
+    <div class="page" id="page-settings">
+      <div class="page-header">
+        <h2>⚙️ Settings</h2>
+        <p>Configure work schedule and system preferences</p>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">Work Schedule</div>
+          <div class="form-group mt-8">
+            <label>Organization Name</label>
+            <input type="text" id="s-org" placeholder="My Organization"/>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Work Start Time</label>
+              <input type="time" id="s-start"/>
+            </div>
+            <div class="form-group">
+              <label>Work End Time</label>
+              <input type="time" id="s-end"/>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Late Threshold (minutes)</label>
+              <input type="number" id="s-late" min="0" max="120"/>
+            </div>
+            <div class="form-group">
+              <label>Early Leave Threshold (min)</label>
+              <input type="number" id="s-early" min="0" max="120"/>
+            </div>
+          </div>
+          <button class="btn btn-success" onclick="saveSettings()">💾 Save Settings</button>
+          <div class="mt-8 text-sm" id="settings-result"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">System Info</div>
+          <div id="sys-info" style="font-size:13px;line-height:1.8;color:var(--text2)">Loading...</div>
+          <hr class="divider"/>
+          <div class="card-title">Status Legend</div>
+          <div style="display:flex;flex-direction:column;gap:8px;font-size:12px">
+            <div><span class="badge badge-green">PRESENT</span> — On time check-in</div>
+            <div><span class="badge badge-orange">LATE</span> — Arrived after threshold</div>
+            <div><span class="badge badge-blue">EARLY_LEAVE</span> — Left before threshold</div>
+            <div><span class="badge badge-red">ABSENT</span> — No attendance recorded</div>
+            <div><span class="badge badge-purple">LATE+EARLY</span> — Both late & early leave</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════════
+//  State
+// ═══════════════════════════════════════════════════════════════════════════
+let recognitionActive = false;
+let recognitionPoll = null;
+let trainingPoll = null;
+let recentActivity = [];
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  Navigation
+// ═══════════════════════════════════════════════════════════════════════════
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  event.currentTarget.classList.add('active');
+  
+  if (name === 'dashboard') loadDashboard();
+  if (name === 'employees') loadEmployees();
+  if (name === 'training') loadTrainingPage();
+  if (name === 'records') loadRecordsPage();
+  if (name === 'analytics') loadAnalytics();
+  if (name === 'settings') loadSettings();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  Modals
+// ═══════════════════════════════════════════════════════════════════════════
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  Toast
+// ═══════════════════════════════════════════════════════════════════════════
+function toast(msg, type='info') {
+  const icons = {success:'✅', error:'❌', info:'ℹ️', warn:'⚠️'};
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `<span>${icons[type]}</span><span>${msg}</span>`;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => el.remove(), 4000);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  API helpers
+// ═══════════════════════════════════════════════════════════════════════════
+async function api(path, method='GET', body=null) {
+  const opts = { method, headers: {'Content-Type':'application/json'} };
+  if (body) opts.body = JSON.stringify(body);
+  const r = await fetch('/api' + path, opts);
+  return r.json();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  Clock & Status
+// ═══════════════════════════════════════════════════════════════════════════
+function updateClock() {
+  const now = new Date();
+  document.getElementById('time-display').textContent = now.toLocaleTimeString('en-PK', {
+    hour:'2-digit', minute:'2-digit', second:'2-digit'
+  });
+}
+setInterval(updateClock, 1000); updateClock();
+
+async function updateModelStatus() {
+  const d = await api('/model/status');
+  const dot = document.getElementById('model-dot');
+  const txt = document.getElementById('model-status-txt');
+  if (d.trained) {
+    dot.className = 'status-dot on';
+    txt.textContent = 'Model Ready';
+  } else {
+    dot.className = 'status-dot off';
+    txt.textContent = 'Model Untrained';
+  }
+}
+updateModelStatus(); setInterval(updateModelStatus, 30000);
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  Dashboard
+// ═══════════════════════════════════════════════════════════════════════════
+async function loadDashboard() {
+  const today = new Date().toLocaleDateString('en-PK', {
+    weekday:'long', year:'numeric', month:'long', day:'numeric'
+  });
+  document.getElementById('dash-date').textContent = today;
+
+  const d = await api('/attendance/today');
+  const records = d.records || [];
+  const sessions = d.active_sessions || {};
+
+  const present = records.filter(r => r.Check_In).length;
+  const late = records.filter(r => r.Check_In_Status === 'LATE').length;
+  const checkedOut = records.filter(r => r.Check_Out).length;
+  const active = Object.keys(sessions).length;
+
+  document.getElementById('stat-present').textContent = present;
+  document.getElementById('stat-present-sub').textContent = `of ${records.length} expected`;
+  document.getElementById('stat-late').textContent = late;
+  document.getElementById('stat-checkout').textContent = checkedOut;
+  document.getElementById('stat-active').textContent = active;
+
+  // Today table
+  const tbody = document.getElementById('today-table-body');
+  if (!records.length) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="4">No records for today</td></tr>';
+  } else {
+    tbody.innerHTML = records.map(r => `
+      <tr>
+        <td><strong>${r.Name}</strong></td>
+        <td>${r.Check_In || '—'}</td>
+        <td>${r.Check_Out || '—'}</td>
+        <td>${statusBadge(r.Status)}</td>
+      </tr>
+    `).join('');
+  }
+
+  // Active sessions
+  const asl = document.getElementById('active-sessions-list');
+  const sessArr = Object.entries(sessions);
+  if (!sessArr.length) {
+    asl.innerHTML = '<p class="text-sm text-center" style="padding:16px">No one currently in</p>';
+  } else {
+    asl.innerHTML = sessArr.map(([id, s]) => `
+      <div class="emp-row">
+        <div class="emp-avatar">${s.name[0]}</div>
+        <div class="emp-info">
+          <div class="emp-name">${s.name}</div>
+          <div class="emp-meta">In since ${s.check_in} · ID: ${id}</div>
+        </div>
+        <span class="badge badge-green">IN</span>
+      </div>
+    `).join('');
+  }
+
+  // Trend chart
+  const ana = await api('/analytics?days=7');
+  renderTrendChart(ana.daily_trend || {});
+}
+
+function renderTrendChart(trend) {
+  const el = document.getElementById('trend-chart');
+  const days = Object.entries(trend).sort((a,b) => a[0] > b[0] ? 1 : -1);
+  if (!days.length) { el.innerHTML = '<p class="text-sm">No data</p>'; return; }
+  const max = Math.max(...days.map(d => d[1].present), 1);
+  el.innerHTML = days.map(([d, v]) => {
+    const h = Math.round((v.present / max) * 50);
+    const label = d.slice(5); // MM-DD
+    return `<div class="mini-bar-wrap">
+      <div class="mini-bar" style="height:${h}px;background:var(--blue)88" title="${d}: ${v.present} present"></div>
+      <div class="mini-bar-label">${label}</div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  Recognition
+// ═══════════════════════════════════════════════════════════════════════════
+async function startRecognition() {
+  const d = await api('/recognize/start', 'POST');
+  if (!d.success) { toast(d.message, 'error'); return; }
+  recognitionActive = true;
+  document.getElementById('start-recog-btn').disabled = true;
+  document.getElementById('stop-recog-btn').disabled = false;
+  document.getElementById('cam-status-badge').className = 'badge badge-green';
+  document.getElementById('cam-status-badge').textContent = '● Live';
+  toast('Recognition started', 'success');
+  recognitionPoll = setInterval(pollRecognition, 150);
+}
+
+async function stopRecognition() {
+  clearInterval(recognitionPoll);
+  await api('/recognize/stop', 'POST');
+  recognitionActive = false;
+  document.getElementById('start-recog-btn').disabled = false;
+  document.getElementById('stop-recog-btn').disabled = true;
+  document.getElementById('cam-status-badge').className = 'badge badge-gray';
+  document.getElementById('cam-status-badge').textContent = '● Offline';
+  document.getElementById('camera-feed').src = '';
+}
+
+async function pollRecognition() {
+  const d = await api('/recognize/status');
+  
+  if (d.frame) {
+    document.getElementById('camera-feed').src = 'data:image/jpeg;base64,' + d.frame;
+  }
+  
+  if (d.detection) {
+    const det = d.detection;
+    const box = document.getElementById('detection-box');
+    box.style.display = 'block';
+    document.getElementById('no-detection-text').style.display = 'none';
+    document.getElementById('detect-name').textContent = det.name;
+    document.getElementById('detect-detail').textContent =
+      `${det.department} · ${det.timestamp.slice(11,19)}`;
+    const ab = document.getElementById('detect-action-badge');
+    ab.textContent = det.action === 'CHECK_IN' ? '→ CHECK IN' : '← CHECK OUT';
+    ab.className = 'detect-action ' + (det.action === 'CHECK_IN' ? 'action-in' : 'action-out');
+    box.className = 'success';
+
+    // Add to timeline
+    const exists = recentActivity.find(a => a.timestamp === det.timestamp);
+    if (!exists) {
+      recentActivity.unshift(det);
+      if (recentActivity.length > 8) recentActivity.pop();
+      renderTimeline();
+    }
+  }
+
+  if (d.error) {
+    toast('Camera error: ' + d.error, 'error');
+    stopRecognition();
+  }
+  
+  if (!d.active && recognitionActive) {
+    stopRecognition();
+  }
+}
+
+function renderTimeline() {
+  const el = document.getElementById('recent-timeline');
+  if (!recentActivity.length) {
+    el.innerHTML = '<p class="text-sm">No activity yet</p>';
+    return;
+  }
+  el.innerHTML = recentActivity.map(a => `
+    <div class="tl-item">
+      <div class="tl-dot ${a.action === 'CHECK_IN' ? 'green' : 'blue'}"></div>
+      <div class="tl-time">${a.timestamp.slice(11,19)}</div>
+      <div class="tl-text"><strong>${a.name}</strong> — ${a.action.replace('_',' ')}</div>
+    </div>
+  `).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  Employees
+// ═══════════════════════════════════════════════════════════════════════════
+async function loadEmployees() {
+  const d = await api('/employees');
+  const emps = d.employees || {};
+  const arr = Object.entries(emps);
+
+  const list = document.getElementById('emp-list');
+  if (!arr.length) {
+    list.innerHTML = '<p class="text-sm text-center" style="padding:32px">No employees yet. Add one!</p>';
+  } else {
+    list.innerHTML = arr.map(([id, e]) => `
+      <div class="emp-row">
+        <div class="emp-avatar">${e.name[0].toUpperCase()}</div>
+        <div class="emp-info">
+          <div class="emp-name">${e.name}</div>
+          <div class="emp-meta">${id} · ${e.department} · ${e.trained ? '✅ Trained' : '⏳ Not trained'}</div>
+        </div>
+        <button class="btn btn-danger btn-sm" onclick="deleteEmployee('${id}','${e.name}')">🗑</button>
+      </div>
+    `).join('');
+  }
+
+  // Fill selects
+  const selects = ['manual-emp-select', 'train-emp-select'];
+  selects.forEach(sid => {
+    const sel = document.getElementById(sid);
+    if (sel) {
+      sel.innerHTML = '<option value="">— Choose employee —</option>' +
+        arr.map(([id,e]) => `<option value="${id}">${e.name} (${id})</option>`).join('');
+    }
+  });
+}
+
+async function submitAddEmployee() {
+  const id = document.getElementById('new-emp-id').value.trim();
+  const name = document.getElementById('new-emp-name').value.trim();
+  const dept = document.getElementById('new-emp-dept').value.trim() || 'General';
+  if (!id || !name) { toast('ID and Name required', 'warn'); return; }
+
+  const d = await api('/employees', 'POST', {id, name, department: dept});
+  if (d.success) {
+    toast(d.message, 'success');
+    closeModal('addEmpModal');
+    document.getElementById('new-emp-id').value = '';
+    document.getElementById('new-emp-name').value = '';
+    document.getElementById('new-emp-dept').value = '';
+    loadEmployees();
+  } else {
+    toast(d.message, 'error');
+  }
+}
+
+async function deleteEmployee(id, name) {
+  if (!confirm(`Delete employee ${name} (${id})? This will remove their training data.`)) return;
+  const d = await api('/employees/' + id, 'DELETE');
+  toast(d.message, d.success ? 'success' : 'error');
+  if (d.success) loadEmployees();
+}
+
+// Manual attendance
+async function manualCheckIn() {
+  const id = document.getElementById('manual-emp-select').value;
+  if (!id) { toast('Select an employee', 'warn'); return; }
+  const d = await api('/attendance/checkin', 'POST', {employee_id: id});
+  document.getElementById('manual-result').innerHTML =
+    `<span class="${d.success ? 'badge badge-green' : 'badge badge-red'}">${d.message}</span>`;
+  toast(d.message, d.success ? 'success' : 'error');
+}
+
+async function manualCheckOut() {
+  const id = document.getElementById('manual-emp-select').value;
+  if (!id) { toast('Select an employee', 'warn'); return; }
+  const d = await api('/attendance/checkout', 'POST', {employee_id: id});
+  document.getElementById('manual-result').innerHTML =
+    `<span class="${d.success ? 'badge badge-blue' : 'badge badge-red'}">${d.message}</span>`;
+  toast(d.message, d.success ? 'success' : 'error');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  Training
+// ═══════════════════════════════════════════════════════════════════════════
+async function loadTrainingPage() {
+  loadEmployees();
+  const d = await api('/employees');
+  const emps = d.employees || {};
+  const ms = await api('/model/status');
+
+  const list = document.getElementById('training-status-list');
+  const arr = Object.entries(emps);
+  if (!arr.length) {
+    list.innerHTML = '<p class="text-sm">No employees registered</p>';
+  } else {
+    list.innerHTML = arr.map(([id, e]) => `
+      <div class="flex-between" style="padding:8px 0;border-bottom:1px solid var(--border)55">
+        <div>
+          <div style="font-size:13px;font-weight:600">${e.name}</div>
+          <div class="text-sm">${id} · ${e.department}</div>
+        </div>
+        <div>
+          ${e.trained 
+            ? `<span class="badge badge-green">✅ ${e.sample_count||0} samples</span>` 
+            : '<span class="badge badge-gray">⏳ No samples</span>'}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  document.getElementById('model-info').innerHTML = `
+    Model trained: <strong>${ms.trained ? '✅ Yes' : '❌ No'}</strong><br>
+    Employees: <strong>${ms.employee_count}</strong><br>
+    Trained employees: <strong>${ms.trained_employees || 0}</strong><br>
+    ${ms.trained ? 'Model file: <code style="font-size:11px">face_model.yml</code>' : ''}
+  `;
+}
+
+async function startCapture() {
+  const empId = document.getElementById('train-emp-select').value;
+  const samples = parseInt(document.getElementById('train-samples').value) || 50;
+  if (!empId) { toast('Select an employee first', 'warn'); return; }
+
+  const d = await api('/train/start', 'POST', {employee_id: empId, samples});
+  if (!d.success) { toast(d.message, 'error'); return; }
+
+  openModal('trainModal');
+  toast('Capturing face samples...', 'info');
+
+  const emps = (await api('/employees')).employees || {};
+  document.getElementById('train-emp-label').textContent = emps[empId]?.name || empId;
+
+  trainingPoll = setInterval(pollTraining, 150);
+}
+
+async function pollTraining() {
+  const d = await api('/train/status');
+  
+  if (d.frame) {
+    document.getElementById('train-feed').src = 'data:image/jpeg;base64,' + d.frame;
+  }
+
+  const pct = d.total ? Math.round((d.count / d.total) * 100) : 0;
+  document.getElementById('train-progress-bar').style.width = pct + '%';
+  document.getElementById('train-progress-text').textContent = `${d.count} / ${d.total} samples`;
+  document.getElementById('train-overlay').textContent = `${pct}%`;
+
+  if (!d.active && d.mode !== 'train') {
+    clearInterval(trainingPoll);
+    if (d.count >= d.total) {
+      toast('✅ Face samples captured! Now click "Train Model"', 'success');
+      closeModal('trainModal');
+      loadTrainingPage();
+    }
+  }
+
+  if (d.error) {
+    clearInterval(trainingPoll);
+    toast('Error: ' + d.error, 'error');
+  }
+}
+
+async function stopTraining() {
+  clearInterval(trainingPoll);
+  await api('/train/stop', 'POST');
+  closeModal('trainModal');
+}
+
+async function trainModel() {
+  const btn = document.getElementById('train-model-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Training...';
+  document.getElementById('train-model-result').textContent = 'Please wait...';
+
+  const d = await api('/train/model', 'POST');
+  btn.disabled = false;
+  btn.textContent = '🧠 Train Model';
+  document.getElementById('train-model-result').textContent = d.message;
+  toast(d.message, d.success ? 'success' : 'error');
+  if (d.success) { loadTrainingPage(); updateModelStatus(); }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  Records
+// ═══════════════════════════════════════════════════════════════════════════
+async function loadRecordsPage() {
+  const d = await api('/attendance/dates');
+  const dates = d.dates || [];
+  const sel = document.getElementById('records-date-select');
+  sel.innerHTML = '<option value="">Today</option>' +
+    dates.map(dt => `<option value="${dt}">${dt}</option>`).join('');
+  loadRecordsForDate();
+}
+
+async function loadRecordsForDate() {
+  const sel = document.getElementById('records-date-select');
+  const dt = sel.value;
+  const d = dt ? await api('/attendance/date/' + dt) : await api('/attendance/today');
+  renderRecordsTable(d.records || [], dt || 'Today');
+}
+
+function renderRecordsTable(records, label) {
+  document.getElementById('records-title').textContent = `Records — ${label} (${records.length} entries)`;
+  const tbody = document.getElementById('records-table-body');
+  if (!records.length) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="8">No records found</td></tr>';
+    return;
+  }
+  tbody.innerHTML = records.map(r => `
+    <tr>
+      <td><strong>${r.Name}</strong><br><span class="text-sm">${r.Employee_ID}</span></td>
+      <td>${r.Department}</td>
+      <td>${r.Check_In || '—'}</td>
+      <td>${r.Check_Out || '—'}</td>
+      <td>${r.Working_Hours ? r.Working_Hours + 'h' : '—'}</td>
+      <td>${statusBadge(r.Check_In_Status)}</td>
+      <td>${statusBadge(r.Check_Out_Status)}</td>
+      <td>${statusBadge(r.Status)}</td>
+    </tr>
+  `).join('');
+}
+
+async function exportCSV() {
+  const sel = document.getElementById('records-date-select');
+  const dt = sel.value || new Date().toISOString().slice(0,10);
+  window.open(`/api/attendance/date/${dt}`, '_blank');
+  toast('Opening CSV data...', 'info');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  Analytics
+// ═══════════════════════════════════════════════════════════════════════════
+async function loadAnalytics() {
+  const d = await api('/analytics?days=30');
+  document.getElementById('a-present').textContent = d.present || 0;
+  document.getElementById('a-late').textContent = d.late || 0;
+  document.getElementById('a-early').textContent = d.early_leave || 0;
+  document.getElementById('a-absent').textContent = d.absent || 0;
+
+  const tbody = document.getElementById('analytics-table-body');
+  const emps = Object.entries(d.employee_summary || {});
+  if (!emps.length) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="6">No data available</td></tr>';
+    return;
+  }
+  tbody.innerHTML = emps.map(([id, e]) => {
+    const avg = e.present > 0 ? (e.hours / e.present).toFixed(1) : '—';
+    return `<tr>
+      <td><strong>${e.name}</strong><br><span class="text-sm">${id}</span></td>
+      <td><span class="badge badge-green">${e.present}</span></td>
+      <td><span class="badge badge-orange">${e.late}</span></td>
+      <td><span class="badge badge-blue">${e.early}</span></td>
+      <td>${e.hours.toFixed(1)}h</td>
+      <td>${avg}h</td>
+    </tr>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  Settings
+// ═══════════════════════════════════════════════════════════════════════════
+async function loadSettings() {
+  const d = await api('/settings');
+  document.getElementById('s-org').value = d.organization || '';
+  document.getElementById('s-start').value = d.work_start || '09:00';
+  document.getElementById('s-end').value = d.work_end || '17:00';
+  document.getElementById('s-late').value = d.late_threshold_min || 15;
+  document.getElementById('s-early').value = d.early_threshold_min || 30;
+
+  const ms = await api('/model/status');
+  document.getElementById('sys-info').innerHTML = `
+    Organization: <strong>${d.organization}</strong><br>
+    Work Hours: <strong>${d.work_start} – ${d.work_end}</strong><br>
+    Late Threshold: <strong>${d.late_threshold_min} minutes</strong><br>
+    Early Leave Threshold: <strong>${d.early_threshold_min} minutes</strong><br>
+    Model Status: <strong>${ms.trained ? '✅ Trained' : '❌ Not trained'}</strong><br>
+    Total Employees: <strong>${ms.employee_count}</strong>
+  `;
+}
+
+async function saveSettings() {
+  const settings = {
+    organization: document.getElementById('s-org').value,
+    work_start: document.getElementById('s-start').value,
+    work_end: document.getElementById('s-end').value,
+    late_threshold_min: parseInt(document.getElementById('s-late').value),
+    early_threshold_min: parseInt(document.getElementById('s-early').value),
+  };
+  const d = await api('/settings', 'POST', settings);
+  document.getElementById('settings-result').textContent = d.message;
+  toast(d.message, d.success ? 'success' : 'error');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  Helpers
+// ═══════════════════════════════════════════════════════════════════════════
+function statusBadge(status) {
+  if (!status) return '<span class="badge badge-gray">—</span>';
+  const map = {
+    'PRESENT': 'badge-green', 'ON_TIME': 'badge-green',
+    'LATE': 'badge-orange', 'LATE+EARLY': 'badge-purple',
+    'EARLY_LEAVE': 'badge-blue', 'NOT_OUT': 'badge-gray',
+    'ABSENT': 'badge-red'
+  };
+  return `<span class="badge ${map[status] || 'badge-gray'}">${status}</span>`;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  Init
+// ═══════════════════════════════════════════════════════════════════════════
+loadDashboard();
+</script>
+</body>
+</html>

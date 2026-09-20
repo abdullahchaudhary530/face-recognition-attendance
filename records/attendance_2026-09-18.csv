@@ -1,0 +1,3 @@
+Date,Employee_ID,Name,Department,Check_In,Check_Out,Status,Working_Hours,Check_In_Status,Check_Out_Status,Notes
+2026-09-18,EMP001,Ali Hassan,Engineering,18:18:50,18:18:50,LATE,0.00,LATE,ON_TIME,Face Detected
+2026-09-18,EMP002,Sara Khan,HR,18:18:50,,LATE,,LATE,,Face Detected

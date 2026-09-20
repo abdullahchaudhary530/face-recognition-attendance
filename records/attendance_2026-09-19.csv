@@ -1,0 +1,2 @@
+Date,Employee_ID,Name,Department,Check_In,Check_Out,Status,Working_Hours,Check_In_Status,Check_Out_Status,Notes
+2026-09-19,EMP001,Ali Hassan,Engineering,00:32:01,00:32:07,EARLY_LEAVE,0.00,ON_TIME,EARLY_LEAVE,Face Detected
