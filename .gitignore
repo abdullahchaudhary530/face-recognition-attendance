@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+data/
+records/
+models/face_model.yml
+models/labels.pkl
